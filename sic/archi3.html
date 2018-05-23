@@ -1,0 +1,282 @@
+<html>
+	<head>
+	<!--<script src="SIC.js"></script>-->
+	<script  type="text/javascript" src="SIC.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script>
+		var SIC = new SICinteprater();
+		var addedSIC = false;
+		const bullet = "sic: ";
+		
+		//TextBoxes references
+		var inputTextBox, resultTextBox, labelsTextBox, sicArrTextBox;
+
+		//Buttons references
+		var runButton , debugButton, nextButton ,cleanButton, stopButton;
+
+		//Labels
+		var IPlabel;
+
+		function clearRes_Label()
+		{
+			resultTextBox.value = "";
+			labelsTextBox.value = "";
+			sicArrTextBox.value = "";
+		}
+		function run()
+		{
+			lockInputTextBox();
+			clearRes_Label();
+
+			let input = inputTextBox.value;
+			let res = SIC.run(input);
+			
+			if(res instanceof SICerror)
+				alert(res.error);
+			else
+			{
+				sicArrTextBox.value = SIC.SCItranslateArr.join(' ');
+				
+			}
+			
+			
+			resultTextBox.value = res;
+			update_labels();
+			unlockInputTextBox();
+		}
+
+		function debug()
+		{
+			lockInputTextBox();
+			clearRes_Label();
+			
+			let input = inputTextBox.value;
+
+			SIC.startDebug();
+			let res = SIC.run(input);
+			
+			if(res instanceof SICerror)
+			{
+				alert(res.error);
+				resultTextBox.value = res;
+			}
+			else
+			{
+				resultTextBox.value = SIC.SCItranslateArr;
+				sicArrTextBox.value = SIC.SCItranslateArr
+				runButton.disabled = true;
+				debugButton.disabled = true;
+				nextButton.disabled = false;
+				stopButton.disabled = false;
+			}
+		}
+
+		function next()
+		{
+			if(SIC.debug)
+			{				
+				let res = SIC.runNext();
+				
+				if(res instanceof SICerror)
+					alert(res.error);
+
+				resultTextBox.value = res;
+				update_labels();
+				IPlabel.innerHTML = "IP location: "+ SIC.IP;
+			}
+			if(!SIC.debug)
+			{
+				runButton.disabled = false;
+				debugButton.disabled = false;
+				nextButton.disabled = true;
+				unlockInputTextBox();
+			}
+			
+		}
+
+		function update_labels()
+		{
+			let labelStatus = "";
+				for(let label in SIC.labelsVals)
+					if(label.charAt(0) == '.')
+						labelStatus += label + ": " + SIC.labelsVals[label]+"\n";
+
+			labelsTextBox.value = labelStatus;
+		}
+
+		function stop_debug()
+		{
+			SIC.stopDebug();
+			runButton.disabled = false;
+			debugButton.disabled = false;
+			nextButton.disabled = true;
+			stopButton.disabled = true;
+			IPlabel.innerHTML = "";
+			unlockInputTextBox();
+		}
+
+		function setup()
+		{
+			//set textboxes
+			 inputTextBox = document.getElementById("inputText");
+			 resultTextBox = document.getElementById("resText");
+			 labelsTextBox = document.getElementById("resLabelText");
+			 sicArrTextBox = document.getElementById("resArrText");
+
+			 //set buttons
+			 runButton = document.getElementById("runButton");
+			 debugButton = document.getElementById("debugButton");
+			 nextButton = document.getElementById("nextButton");
+			 cleanButton = document.getElementById("cleanButton");
+			 stopButton = document.getElementById("stopButton");
+			 copyButton = document.getElementById("copyButton");
+
+			 //set labels
+			 IPlabel = document.getElementById("IPlabel");
+
+
+			  $('#inputText').keyup(function (event) {
+				
+				
+				if (event.keyCode == 13) { // If enter is pressed.
+					
+				  var content = this.value;
+				  
+				  var sel = this.selectionStart;//getInputSelection(this);
+				  var caret = this.selectionStart//getCaret(this);
+				  
+				  //alert(caret + " " + this.value.length + " "+this.value.charAt(caret)+".");
+				  //alert(caret < this.value.length && this.value.charAt(caret) != '\n');
+				  if(!(caret < this.value.length && this.value.charAt(caret) != '\n'))
+				  {
+
+
+					this.value = content.substring(0,caret) +
+								bullet +
+								content.substring(caret,content.length);
+					
+					this.selectionStart = sel + bullet.length;
+					this.selectionEnd = sel + bullet.length;
+					addedSIC = true;
+					
+					event.stopPropagation(); 
+				  } 
+				}
+				
+				else
+					addedSIC = false;
+			  });
+
+
+			$('#inputText').keydown(function (event) {
+				if(event.keyCode == 8)
+				{
+					var content = this.value;
+				  
+				 	 var sel = this.selectionStart;//getInputSelection(this);
+					  var caret = this.selectionStart//getCaret(this);
+					//alert('['+content.substring(caret - bullet.length, caret)+']');
+					
+
+				  if(caret >= bullet.length && content.substring(caret - bullet.length, caret) == bullet )
+				  {
+					  //alert('['+content.substring(0,caret - bullet.length)+']['+content.substring(caret,content.length)+']');
+						this.value = content.substring(0,caret - bullet.length) +
+								content.substring(caret,content.length);
+					
+						this.selectionStart = sel - bullet.length;
+						this.selectionEnd = sel - bullet.length;
+						addedSIC = true;
+						
+						//event.stopPropagation();
+						return false;  
+				  }
+				}
+			});
+			
+			$('#inputText').bind("keydown", TextBoxCheckReadableEvet);
+			
+		}
+		
+		function lockInputTextBox()
+		{
+			inputTextBox.readOnly = true;
+		}
+
+		function unlockInputTextBox()
+		{
+			inputTextBox.readOnly = false;
+		}
+
+		function TextBoxCheckReadableEvet(event)
+		{
+			if(this.readOnly){
+				alert("Cannot edit while in Running/Debugging.");
+			}
+		}
+
+		function copyToClipboard()
+		{
+			sicArrTextBox.focus();
+			sicArrTextBox.select();
+
+			try {
+				document.execCommand('copy');
+			} catch (err) {
+				console.error('Error, unable to copy: ', err);
+			}
+			copyButton.focus();
+			copyButton.select();
+		}
+	  
+	</script>
+	<center><h1>ARCHI3</h1></center>
+	</head>
+	<body onload="setup()">
+		<center>
+		
+		<textarea id="inputText" rows="15" cols="50" onclick="TextBoxCheckReadableEvet()">:: use :: for comment
+:: output - res = a * b
+start: .con_b, .b
+sic: .con, .con_b, end
+sic: .con, .con
+sic: .con, .sub
+sic: .con_b, .con_b
+:: add labels to commands without .
+add: .tmp, .a
+sic: .b, .sub
+sic: .jmp_helper, .sub, start
+end: .res, .tmp
+sic: 0,0,0
+:: all variables must have . at the start
+.a: 10
+.b: 5
+.sub: 1
+.tmp: 0
+.res: 0
+.jmp_helper: 0
+.con: -1
+.con_b: 0</textarea>
+
+		<textarea id="resText" rows="15" cols="50" placeholder="result array will be here" readonly></textarea>
+		<br>
+		<textarea id="resLabelText" rows="10" cols="30"
+				placeholder="labels values here" readonly></textarea>
+		<br>
+		<h2 id="IPlabel"></h2>
+		<button id="runButton" onclick='run()'>RUN!</button>
+		<button id="debugButton" onclick='debug()'>DEBUG!</button>
+		<button id="nextButton" onclick='next()' disabled ="true">NEXTLine!</button>
+		<button id="stopButton" onclick='stop_debug()' disabled="true">stop!</button>
+		<button id="cleanButton" onclick='clearRes_Label()'>clear!</button>
+		<br>
+		<br>
+		<button id="copyButton" onclick='copyToClipboard()'>Copy Sic Array</button>
+		
+		<br>
+		<br>
+		<textarea id="resArrText" rows="10" cols="30" placeholder="the code as arr..." readonly></textarea>
+		</center>
+		
+	</body>
+</html>
