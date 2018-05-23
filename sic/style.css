@@ -136,7 +136,7 @@ textarea::-webkit-scrollbar-thumb {
     background: rgb(53, 53, 53);
     -webkit-box-shadow: 2px 2px 2px 0 rgba(0,0,0,0.2) inset;
     box-shadow: 2px 2px 2px 0 rgba(0,0,0,0.2) inset;
-    text-shadow: 1px 1px 0 rgba(127,127,127,0.66) ;
+    /* text-shadow: 1px 1px 0 rgba(127,127,127,0.66) ; */
 }
 
 .body_normal

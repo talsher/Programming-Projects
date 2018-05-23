@@ -94,6 +94,9 @@ class SICinteprater
     }
     checkLine(line, lineNum)
     {
+        if(line == ""){
+            return true;
+        }
         line = line.replace(/ /g, '');
         let colonIndex = line.indexOf(":") ;
         let noSCIerror = new SICerror(lineNum, "no SIC command or label");
@@ -163,10 +166,12 @@ class SICinteprater
 
 
         let numsArr = text.split("\n");
+        numsArr = numsArr.filter(function(n){ return n != "" }); 
         let currCommand = []
         
         for(let i = 0, currIndex = 0;i < numsArr.length;i++, currIndex+=currCommand.length)
         {
+
             currCommand = numsArr[i].split(",");
             let colonIndex = currCommand[0].indexOf(":") ;
             //if found ':', its should be a label or sic or comment
