@@ -1,6 +1,6 @@
 <html>
 	<head>
-	<!--<script src="SIC.js"></script>-->
+	<link rel="stylesheet" type="text/css" href="style.css">
 	<script  type="text/javascript" src="SIC.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 	<script>
@@ -12,11 +12,12 @@
 		var inputTextBox, resultTextBox, labelsTextBox, sicArrTextBox;
 
 		//Buttons references
-		var runButton , debugButton, nextButton ,cleanButton, stopButton;
+		var runButton , debugButton, nextButton ,cleanButton, stopButton, switchStyleButton;
 
 		//Labels
 		var IPlabel;
-
+		// style name
+		var nextStyle;
 		function clearRes_Label()
 		{
 			resultTextBox.value = "";
@@ -130,9 +131,11 @@
 			 cleanButton = document.getElementById("cleanButton");
 			 stopButton = document.getElementById("stopButton");
 			 copyButton = document.getElementById("copyButton");
-
+			 switchStyleButton = document.getElementById("switchStyleButton");
 			 //set labels
 			 IPlabel = document.getElementById("IPlabel");
+
+			 
 
 
 			  $('#inputText').keyup(function (event) {
@@ -195,6 +198,9 @@
 			});
 			
 			$('#inputText').bind("keydown", TextBoxCheckReadableEvet);
+
+
+			switchStyle("normal");
 			
 		}
 		
@@ -228,13 +234,56 @@
 			copyButton.focus();
 			copyButton.select();
 		}
+
+		function switchStyle(style)
+		{
+			if(style == "dark")
+			{
+				$( "button" ).each(function( index ) {
+					$( this ).removeClass("button_normal");
+					$( this ).addClass("button_dark");
+				});
+
+				$( "textarea" ).each(function( index ) {
+					$( this ).removeClass("textarea_normal");
+					$( this ).addClass("textarea_dark");
+				});
+
+				$( "body" ).removeClass("body_normal");
+				$( "body" ).addClass("body_dark");
+
+				nextStyle = "normal";
+				switchStyleButton.innerHTML = "Back to normal!";
+
+			}
+			else if(style == "normal")
+			{
+				$( "button" ).each(function( index ) {
+					$( this ).removeClass("button_dark");
+					$( this ).addClass("button_normal");
+				});
+
+				$( "textarea" ).each(function( index ) {
+					$( this ).removeClass("textarea_dark");
+					$( this ).addClass("textarea_normal");
+				});
+
+				$( "body" ).removeClass("body_dark");
+				$( "body" ).addClass("body_normal");
+
+				nextStyle = "dark";
+				switchStyleButton.innerHTML = "Go Dark!";
+			}
+			
+
+		}
 	  
 	</script>
 	<center><h1>ARCHI3</h1></center>
 	</head>
-	<body onload="setup()">
+	<body onload="setup()" class="body_normal">
 		<center>
-		
+		<button id="switchStyleButton" onclick='switchStyle(nextStyle)' class="button_float">Go Dark!</button>
 		<textarea id="inputText" rows="15" cols="50" onclick="TextBoxCheckReadableEvet()">:: use :: for comment
 :: output - res = a * b
 start: .con_b, .b
@@ -264,7 +313,7 @@ sic: 0,0,0
 				placeholder="labels values here" readonly></textarea>
 		<br>
 		<h2 id="IPlabel"></h2>
-		<button id="runButton" onclick='run()'>RUN!</button>
+		<button id="switchStyle" onclick='run()'>RUN!</button>
 		<button id="debugButton" onclick='debug()'>DEBUG!</button>
 		<button id="nextButton" onclick='next()' disabled ="true">NEXTLine!</button>
 		<button id="stopButton" onclick='stop_debug()' disabled="true">stop!</button>
