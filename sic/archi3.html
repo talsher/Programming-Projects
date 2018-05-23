@@ -132,6 +132,8 @@
 			 stopButton = document.getElementById("stopButton");
 			 copyButton = document.getElementById("copyButton");
 			 switchStyleButton = document.getElementById("switchStyleButton");
+			 incTextButton = document.getElementById("incTextButton");
+			 decTextButton = document.getElementById("decTextButton");
 			 //set labels
 			 IPlabel = document.getElementById("IPlabel");
 
@@ -199,6 +201,14 @@
 			
 			$('#inputText').bind("keydown", TextBoxCheckReadableEvet);
 
+			switchStyleButton.style.bottom = 40;
+			switchStyleButton.style.right = 40;
+
+			decTextButton.style.bottom = 100;
+			decTextButton.style.right = 60;
+
+			incTextButton.style.bottom = 160;
+			incTextButton.style.right = 60;
 
 			switchStyle("normal");
 			
@@ -274,17 +284,33 @@
 				nextStyle = "dark";
 				switchStyleButton.innerHTML = "Go Dark!";
 			}
-			
 
 		}
-	  
+
+		function changeTextSize(delta)
+		{
+			$( "textarea" ).each(function( index ) {
+				var size = parseInt($(this).css("font-size"));
+				size = size + delta + "px";
+				$(this).css({
+					'font-size': size
+				});
+			});
+		}
+
+
 	</script>
 	<center><h1>ARCHI3</h1></center>
 	</head>
 	<body onload="setup()" class="body_normal">
 		<center>
 		<button id="switchStyleButton" onclick='switchStyle(nextStyle)' class="button_float">Go Dark!</button>
-		<textarea id="inputText" rows="15" cols="50" onclick="TextBoxCheckReadableEvet()">:: use :: for comment
+		<button id="incTextButton"onclick='changeTextSize(1)' class="button_float button_fix_size">+</button>
+		<button id="decTextButton" onclick='changeTextSize(-1)' class="button_float button_fix_size">-</button>
+<table>
+	<tr>
+			<td rowspan="2">
+		<textarea id="inputText" rows="22" cols="50" onclick="TextBoxCheckReadableEvet()">:: use :: for comment
 :: output - res = a * b
 start: .con_b, .b
 sic: .con, .con_b, end
@@ -306,14 +332,21 @@ sic: 0,0,0
 .jmp_helper: 0
 .con: -1
 .con_b: 0</textarea>
-
-		<textarea id="resText" rows="15" cols="50" placeholder="result array will be here" readonly></textarea>
-		<br>
-		<textarea id="resLabelText" rows="10" cols="30"
-				placeholder="labels values here" readonly></textarea>
+			</td>
+			<td>
+				<textarea id="resText" rows="10" cols="30" placeholder="result array will be here" readonly></textarea>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<textarea id="resLabelText" rows="10" cols="30"
+						placeholder="labels values here" readonly></textarea>
+			</td>
+		</tr>
+</table>
 		<br>
 		<h2 id="IPlabel"></h2>
-		<button id="switchStyle" onclick='run()'>RUN!</button>
+		<button id="runButton" onclick='run()'>RUN!</button>
 		<button id="debugButton" onclick='debug()'>DEBUG!</button>
 		<button id="nextButton" onclick='next()' disabled ="true">NEXTLine!</button>
 		<button id="stopButton" onclick='stop_debug()' disabled="true">stop!</button>
