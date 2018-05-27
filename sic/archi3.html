@@ -1,7 +1,7 @@
 <html>
 	<head>
-	<link rel="stylesheet" type="text/css" href="style.css">
-	<script  type="text/javascript" src="SIC.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/style.css">
+	<script  type="text/javascript" src="scripts/SIC.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 	<script>
 		var SIC = new SICinteprater();
@@ -33,7 +33,10 @@
 			let res = SIC.run(input);
 			
 			if(res instanceof SICerror)
+			{
+				unlockInputTextBox();
 				alert(res.error);
+			}
 			else
 			{
 				sicArrTextBox.value = SIC.SCItranslateArr.join(' ');
@@ -41,7 +44,7 @@
 			}
 			
 			
-			resultTextBox.value = res;
+			update_result(res);
 			update_labels();
 			unlockInputTextBox();
 		}
@@ -58,6 +61,7 @@
 			
 			if(res instanceof SICerror)
 			{
+				unlockInputTextBox();
 				alert(res.error);
 				resultTextBox.value = res;
 			}
@@ -81,7 +85,8 @@
 				if(res instanceof SICerror)
 					alert(res.error);
 
-				resultTextBox.value = res;
+				update_result(res);
+				
 				update_labels();
 				IPlabel.innerHTML = "IP location: "+ SIC.IP;
 			}
@@ -99,7 +104,7 @@
 		{
 			let labelStatus = "";
 				for(let label in SIC.labelsVals)
-					if(label.charAt(0) == '.')
+					//if(label.charAt(0) == '.')
 						labelStatus += label + ": " + SIC.labelsVals[label]+"\n";
 
 			labelsTextBox.value = labelStatus;
@@ -114,6 +119,31 @@
 			stopButton.disabled = true;
 			IPlabel.innerHTML = "";
 			unlockInputTextBox();
+		}
+		function update_result(res)
+		{
+			if(res instanceof SICerror)
+			{
+				resultTextBox.value = res;
+			}
+			else
+			{
+				resultTextBox.value="";
+				for(let i=0, ip=0;i<res.length;i++, ip++)
+				{
+					//resultTextBox.value += "-"+ip+"-";
+					if(ip ==0){
+						resultTextBox.value +=  i +':  ';
+					}
+					if(ip ==1 || ip==0){
+						resultTextBox.value += res[i] +",";
+					}
+					if(ip == 2){
+						resultTextBox.value +=  res[i] +'\n';
+						ip = -1;
+					}
+				}
+			}
 		}
 
 		function setup()
@@ -300,7 +330,9 @@
 
 
 	</script>
-	<center><h1>ARCHI3</h1></center>
+		<center>
+		<h1>SIC interpreter</h1>
+		</center>
 	</head>
 	<body onload="setup()" class="body_normal">
 		<center>
@@ -309,7 +341,14 @@
 		<button id="decTextButton" onclick='changeTextSize(-1)' class="button_float button_fix_size">-</button>
 <table>
 	<tr>
-			<td rowspan="2">
+		<td align="center" style="padding-right: 10px">
+				<button id="runButton" onclick='run()' class="button_compiler">RUN</button><br><br>
+				<button id="debugButton" onclick='debug()' class="button_compiler">DEBUG</button><br><br>
+				<button id="nextButton" onclick='next()' disabled ="true" class="button_compiler">NEXT</button><br><br>
+				<button id="stopButton" onclick='stop_debug()' disabled="true" class="button_compiler">stop</button><br><br>
+				<button id="cleanButton" onclick='clearRes_Label()' class="button_compiler">clear</button><br><br>
+		</td>
+			<td>
 		<textarea id="inputText" rows="22" cols="50" onclick="TextBoxCheckReadableEvet()">:: use :: for comment
 :: output - res = a * b
 start: .con_b, .b
@@ -334,25 +373,17 @@ sic: 0,0,0
 .con_b: 0</textarea>
 			</td>
 			<td>
-				<textarea id="resText" rows="10" cols="30" placeholder="result array will be here" readonly></textarea>
+				<textarea id="resText" rows="22" cols="20" placeholder="result array will be here" readonly></textarea>
 			</td>
-		</tr>
-		<tr>
 			<td>
-				<textarea id="resLabelText" rows="10" cols="30"
+				<textarea id="resLabelText" rows="22" cols="20"
 						placeholder="labels values here" readonly></textarea>
 			</td>
 		</tr>
 </table>
+		<h2 id="IPlabel"></h2>		
 		<br>
-		<h2 id="IPlabel"></h2>
-		<button id="runButton" onclick='run()'>RUN!</button>
-		<button id="debugButton" onclick='debug()'>DEBUG!</button>
-		<button id="nextButton" onclick='next()' disabled ="true">NEXTLine!</button>
-		<button id="stopButton" onclick='stop_debug()' disabled="true">stop!</button>
-		<button id="cleanButton" onclick='clearRes_Label()'>clear!</button>
-		<br>
-		<br>
+
 		<button id="copyButton" onclick='copyToClipboard()'>Copy Sic Array</button>
 		
 		<br>

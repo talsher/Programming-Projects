@@ -34,6 +34,11 @@ button
     -webkit-transform-origin: 50% 50% 0;
     transform-origin: 50% 50% 0;
 }
+button:disabled{
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .button_normal
 {
     border: 3px solid #018dc4;
@@ -42,11 +47,15 @@ button
     box-shadow: 2px 2px 2px 0 rgba(0,0,0,0.2) ;
     text-shadow: -1px -1px 0 rgba(15,73,168,0.66) ;
 }
-.button_normal:disabled,
+.button_normal:active,
+    .button_normal[active]{
+    border: 3px solid #000000;
+}
+/*.button_normal:disabled,
 .button_normal[disabled]{
     background: #7e9daa;
     border: 3px solid #679baf;
-}
+}*/
 
 .button_dark
 {
@@ -56,10 +65,18 @@ button
     box-shadow: 2px 2px 2px 0 rgba(0,0,0,0.2) ;
     text-shadow: -1px -1px 0 rgba(127, 131, 139, 0.66) ;
 }
-
+/*
 .button_dark:disabled,
 .button_dark[disabled]{
     background: #1e1f1f;
+}*/
+.button_normal:hover{
+    border: 3px solid #018dc4b6;
+    background: #0198d9cb;
+}
+.button_dark:hover{
+    border: 3px solid #000000d5;
+    background: #545d61b6;
 }
 
 .button_float
@@ -71,7 +88,10 @@ button
     width: 20px;
     height: 20px;
 }
-
+.button_compiler{
+    width: 60px;
+    height: 20px;
+}
 textarea
 {
     display: inline-block;

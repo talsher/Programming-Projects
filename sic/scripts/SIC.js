@@ -1,4 +1,3 @@
-
 class SICerror
 {
     constructor(line, error)
@@ -24,6 +23,7 @@ class SICinteprater
         this.debug = false;
         this.labels = {};
         this.labelsVals = {};
+        this.debugArray =[];
         this.IP = 0;
     }
     startDebug()
@@ -53,6 +53,13 @@ class SICinteprater
                 return this.runSIC();
         }
     }
+
+    checkIPInBound(){
+        return this.SCIarr[this.SCIarr[this.IP]]< this.SCIarr.length && 
+         this.SCIarr[this.SCIarr[this.IP+1]]< this.SCIarr.length && 
+         this.SCIarr[this.SCIarr[this.IP+2]]< this.SCIarr.length;
+    }
+
     runSIC()
     {
         if(!this.debug)
@@ -60,6 +67,10 @@ class SICinteprater
 
             while(this.SCIarr[this.IP]!=0 || this.SCIarr[this.IP + 1]!=0 || this.SCIarr[this.IP + 2]!=0)
             {
+                if(!this.checkIPInBound()){
+                    return new SICerror(-1, "SBN command is out of bound: " 
+                            +this.SCIarr[this.IP]+"," +this.SCIarr[this.IP + 1]+"," +this.SCIarr[this.IP + 2]);
+                }
                 if ((this.SCIarr[this.SCIarr[this.IP]] -= this.SCIarr[this.SCIarr[this.IP + 1]]) < 0)
                     this.IP = this.SCIarr[this.IP + 2];
                 else this.IP += 3;
@@ -68,7 +79,10 @@ class SICinteprater
         }
         else
         {
-            
+            if(!this.checkIPInBound()){
+                return new SICerror(-1, "SBN command is out of bound: " 
+                        +this.SCIarr[this.IP]+"," +this.SCIarr[this.IP + 1]+"," +this.SCIarr[this.IP + 2]);
+            }
             if(this.SCIarr[this.IP]==0 && this.SCIarr[this.IP + 1]==0 && this.SCIarr[this.IP + 2]==0)
             {
                 this.debug = false;
@@ -87,6 +101,8 @@ class SICinteprater
 
         return this.SCIarr;
     }
+
+
     runNext()
     {
         if(this.debug)
@@ -151,6 +167,7 @@ class SICinteprater
         return true;
 
     }
+    // Translate text to arr
     translateToSCI(text)
     {
         this.labels = {};
@@ -197,21 +214,48 @@ class SICinteprater
 
             }
         }
+        this.debugArray = numsArr.slice();
+        for(let i=0; i< this.debugArray.length ; i++)
+            this.debugArray[i] = this.debugArray[i].split(',');
+
         numsArr = numsArr.join(',').split(',');
 
         for(let i=0;i<numsArr.length;i++)
             numsArr[i] = numsArr[i].replace("sic:", '');
         let convertedNum;
-        for(let i=0;i<numsArr.length;i++)
-            if(numsArr[i] in this.labels)
+        let line = 0, line_step = 0;
+        for(let i=0;i<numsArr.length;i++ , line_step++)
+        {
+            if(line_step == this.debugArray[line].length){
+                line_step = 0;
+                line++;
+            }
+
+            if(numsArr[i].includes("+"))
+            {
+                let label_plus = numsArr[i].substr(0, numsArr[i].indexOf("+"));
+                if(label_plus in this.labels)
+                {
+                    let add = numsArr[i].substr(numsArr[i].indexOf("+")+1);
+                    numsArr[i] = this.labels[label_plus] + +add;
+                }
+                else
+                {
+                    return new SICerror(line, "Label: '" +numsArr[i]+ "' does not exsist.")
+                }
+            }
+            else if(numsArr[i] in this.labels)
+            {
                 numsArr[i] = this.labels[numsArr[i]];
+            }
             else if(!isNaN(convertedNum = +numsArr[i])){
                 
                 numsArr[i] = convertedNum;
             }
             else
-                return new SICerror(-1, "Label: '" +numsArr[i]+ "' does not exsist.")
-
+                return new SICerror(line, "Label: '" +numsArr[i]+ "' does not exsist.")
+            
+        }
         return numsArr;
         
     }
@@ -222,6 +266,8 @@ class SICinteprater
 
 
 //let SIC = new SICinteprater();
+//SIC.SCIarr = "47 48 3 50 39 6 40 50 9 50 50 12 39 49 15 50 39 18 41 50 21 50 50 24 39 49 27 50 39 30 42 50 33 43 40 36 0 0 0 51 0 0 0 0 0 0 0 0 51 -1 0 56 54 36 55 55 6 55 52 9 55 53 12 52 52 15 51 51 18 51 53 21 52 51 24 53 53 27 53 55 30 55 55 33 55 54 0 0 0 39 51 51 42 51 52 45 0 51 48 0 0 0 0 0 1 1 0 10".split(' ');
+//SIC.runSIC();
 //console.log(SIC.run("sic:.a, .b, some_label\n::comment\n.a:1\n.b:2\nend:0,0,0\n::comment"));
 //console.log(SIC.run("sic:0,0,0\na:123"));
 //SIC.startDebug();
@@ -231,5 +277,4 @@ class SICinteprater
 //console.log(SIC.runNext());
 //console.log(SIC.runNext());
 
-//console.log(SIC.run(
-//    "start: con_b, b\nsic: con, con_b, end\nsic: con, con\nsic: con, sub\nsic: con_b, con_b\nadd: tmp, a\nsic: b, sub, start\nend: res, tmp\nsic: 0,0,0\na: 10\nb: 5\nsub: 1\ntmp: 0\ncon: -1\ncon_b: 0\nres: 0"));
+//console.log(SIC.run("sic: change+1, change+1\nchange: 0, 1\nsic:0,0,0\n.value: 5"));
