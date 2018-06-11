@@ -31,6 +31,7 @@ class SICinteprater
         this.debugArray =[];
         this.IP = 0;
     }
+
     startDebug()
     {
         this.debug = true;
@@ -45,6 +46,7 @@ class SICinteprater
         this.IP = 0;
         this.labelsVals = {};
         this.SICtext = SICtext;
+
         let test = this.checkText(this.SICtext);
         if(test instanceof SICerror)
             return test;
@@ -57,6 +59,7 @@ class SICinteprater
             if(!this.debug)
                 return this.runSIC();
         }
+
     }
 
     checkIPInBound(){
@@ -363,6 +366,7 @@ class SICinteprater
 
 
 //let SIC = new SICinteprater();
+//SIC.setTimeout(3, ()=>console.log("timeout"));
 //SIC.SCIarr = "47 48 3 50 39 6 40 50 9 50 50 12 39 49 15 50 39 18 41 50 21 50 50 24 39 49 27 50 39 30 42 50 33 43 40 36 0 0 0 51 0 0 0 0 0 0 0 0 51 -1 0 56 54 36 55 55 6 55 52 9 55 53 12 52 52 15 51 51 18 51 53 21 52 51 24 53 53 27 53 55 30 55 55 33 55 54 0 0 0 39 51 51 42 51 52 45 0 51 48 0 0 0 0 0 1 1 0 10".split(' ');
 //SIC.runSIC();
 //console.log(SIC.run("sic:.a, .b, some_label\n::comment\n.a:1\n.b:2\nend:0,0,0\n::comment"));
@@ -375,3 +379,4 @@ class SICinteprater
 //console.log(SIC.runNext());
 
 //console.log(SIC.run("sic: change+1, change+1\nchange: 0, 1\nsic:0,0,0\n.value: 5"));
+//console.log(SIC.run("sic: .a, .b, 0\n.a:0\n.b:1"));

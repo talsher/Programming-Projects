@@ -26,6 +26,62 @@
 		var IPlabel;
 		// style name
 		var nextStyle;
+
+
+
+		function saveTextAsFile()
+		{
+			var textToWrite = inputTextBoxCodeMirror.getValue();
+			var textFileAsBlob = new Blob([textToWrite], {type:'text/plain'});
+			var fileNameToSaveAs = "sic.txt";
+
+			var downloadLink = document.createElement("a");
+			downloadLink.download = fileNameToSaveAs;
+			downloadLink.innerHTML = "Download File";
+			if (window.webkitURL != null)
+			{
+				// Chrome allows the link to be clicked
+				// without actually adding it to the DOM.
+				downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+			}
+			else
+			{
+				// Firefox requires the link to be added to the DOM
+				// before it can be clicked.
+				downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+				downloadLink.onclick = destroyClickedElement;
+				downloadLink.style.display = "none";
+				document.body.appendChild(downloadLink);
+			}
+
+			downloadLink.click();
+		}
+
+		function destroyClickedElement(event)
+		{
+			document.body.removeChild(event.target);
+		}
+
+		function clickFileLoader()
+		{
+			document.getElementById("fileToLoad").click();
+		}
+
+		function loadFileAsText()
+		{
+			var fileToLoad = document.getElementById("fileToLoad").files[0];
+			var fileReader = new FileReader();
+
+			fileReader.onload = function(fileLoadedEvent) 
+			{
+				
+				var textFromFileLoaded = fileLoadedEvent.target.result;
+				inputTextBoxCodeMirror.setValue(textFromFileLoaded);
+			};
+			fileReader.readAsText(fileToLoad, "UTF-8");
+		}
+
+
 		function clearRes_Label()
 		{
 			resultTextBox.value = "";
@@ -36,8 +92,8 @@
 		{
 			lockInputTextBox();
 			clearRes_Label();
-
-			let input = inputTextBox.value;
+			setCookie("data", inputTextBoxCodeMirror.getValue(), 1);
+			let input = inputTextBoxCodeMirror.getValue();
 			let res = SIC.run(input);
 			
 			if(res instanceof SICerror)
@@ -61,7 +117,7 @@
 			lockInputTextBox();
 			clearRes_Label();
 			
-			let input = inputTextBox.value;
+			let input = inputTextBoxCodeMirror.getValue();
 
 			SIC.startDebug();
 			let res = SIC.run(input);
@@ -226,6 +282,7 @@
 			incTextButton.style.bottom = 160;
 			incTextButton.style.right = 60;
 
+
 			switchStyle("normal");
 			
 		}
@@ -333,6 +390,9 @@
 				<button id="stopButton" onclick='stop_debug()' disabled="true" class="button_compiler">stop</button><br><br>
 				<button id="cleanButton" onclick='clearRes_Label()' class="button_compiler">clear</button><br><br>
 				<h3 id="IPlabel"></h3>
+				<button id="saveButton" onclick='saveTextAsFile()' class="button_compiler">save</button><br><br>
+				<button id="loadButton" onclick='clickFileLoader()' class="button_compiler">load</button><br><br>
+				<input type="file" id="fileToLoad" onchange="loadFileAsText()" style="display: none;">
 		</td>
 			<td width="40%">
 		<textarea id="inputText" rows="30" cols="50">:: use :: for comment
