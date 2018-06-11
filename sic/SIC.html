@@ -3,6 +3,13 @@
 	<link rel="stylesheet" type="text/css" href="css/style.css">
 	<script  type="text/javascript" src="scripts/SIC.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="lib/codemirror.js"></script>
+	<link rel="stylesheet" href="lib/codemirror.css">
+	<link rel="stylesheet" href="theme/eclipse.css">
+	<link rel="stylesheet" href="theme/dracula.css">
+	
+	<script src="addon/mode/simple.js"></script>
+
 	<script>
 		var SIC = new SICinteprater();
 		var addedSIC = false;
@@ -10,6 +17,7 @@
 		
 		//TextBoxes references
 		var inputTextBox, resultTextBox, labelsTextBox, sicArrTextBox;
+		var inputTextBoxCodeMirror;
 
 		//Buttons references
 		var runButton , debugButton, nextButton ,cleanButton, stopButton, switchStyleButton;
@@ -40,7 +48,6 @@
 			else
 			{
 				sicArrTextBox.value = SIC.SCItranslateArr.join(' ');
-				
 			}
 			
 			
@@ -170,66 +177,45 @@
 			 
 
 
-			  $('#inputText').keyup(function (event) {
-				
-				
-				if (event.keyCode == 13) { // If enter is pressed.
-					
-				  var content = this.value;
-				  
-				  var sel = this.selectionStart;//getInputSelection(this);
-				  var caret = this.selectionStart//getCaret(this);
-				  
-				  //alert(caret + " " + this.value.length + " "+this.value.charAt(caret)+".");
-				  //alert(caret < this.value.length && this.value.charAt(caret) != '\n');
-				  if(!(caret < this.value.length && this.value.charAt(caret) != '\n'))
-				  {
+				CodeMirror.defineSimpleMode("sicMode", {
+				// The start state contains the rules that are intially used
+				start: [
+					// The regex matches the token, the token property contains the type
+					{regex: /::[^\n]*/, token: "string"},
+					// Rules are matched in the order in which they appear, so there is
+					// no ambiguity between this one and the one above
+					{regex: /([^:]*:)/,
+					token: "keyword"},
+					{regex: /[a-zA-Z]([a-zA-Z]|\d)*/, token: "atom"},
+					{regex: /\d+/,
+					token: "number"},
+					{regex: /::.*/, token: "comment"},
 
-
-					this.value = content.substring(0,caret) +
-								bullet +
-								content.substring(caret,content.length);
-					
-					this.selectionStart = sel + bullet.length;
-					this.selectionEnd = sel + bullet.length;
-					addedSIC = true;
-					
-					event.stopPropagation(); 
-				  } 
+				],
+				// The multi-line comment state.
+				comment: [
+					{regex: /.*?\*\//, token: "comment", next: "start"},
+					{regex: /.*/, token: "comment"}
+				],
+				// The meta property contains global information about the mode. It
+				// can contain properties like lineComment, which are supported by
+				// all modes, and also directives like dontIndentStates, which are
+				// specific to simple modes.
+				meta: {
+					dontIndentStates: ["comment"],
+					lineComment: "::"
 				}
-				
-				else
-					addedSIC = false;
-			  });
+				});
 
+				inputTextBoxCodeMirror = CodeMirror.fromTextArea(inputTextBox, {
+					mode: "sicMode",
+					theme: "eclipse",
+					lineNumbers: true
+				});
 
-			$('#inputText').keydown(function (event) {
-				if(event.keyCode == 8)
-				{
-					var content = this.value;
-				  
-				 	 var sel = this.selectionStart;//getInputSelection(this);
-					  var caret = this.selectionStart//getCaret(this);
-					//alert('['+content.substring(caret - bullet.length, caret)+']');
-					
+				inputTextBoxCodeMirror.setSize(null, "100%");
+				inputTextBoxCodeMirror.getWrapperElement().style["font-size"] = "16px";
 
-				  if(caret >= bullet.length && content.substring(caret - bullet.length, caret) == bullet )
-				  {
-					  //alert('['+content.substring(0,caret - bullet.length)+']['+content.substring(caret,content.length)+']');
-						this.value = content.substring(0,caret - bullet.length) +
-								content.substring(caret,content.length);
-					
-						this.selectionStart = sel - bullet.length;
-						this.selectionEnd = sel - bullet.length;
-						addedSIC = true;
-						
-						//event.stopPropagation();
-						return false;  
-				  }
-				}
-			});
-			
-			$('#inputText').bind("keydown", TextBoxCheckReadableEvet);
 
 			switchStyleButton.style.bottom = 40;
 			switchStyleButton.style.right = 40;
@@ -246,19 +232,12 @@
 		
 		function lockInputTextBox()
 		{
-			inputTextBox.readOnly = true;
+			inputTextBoxCodeMirror.setOption("readOnly", true);
 		}
 
 		function unlockInputTextBox()
 		{
-			inputTextBox.readOnly = false;
-		}
-
-		function TextBoxCheckReadableEvet(event)
-		{
-			if(this.readOnly){
-				alert("Cannot edit while in Running/Debugging.");
-			}
+			inputTextBoxCodeMirror.setOption("readOnly", false);
 		}
 
 		function copyToClipboard()
@@ -291,6 +270,8 @@
 
 				$( "body" ).removeClass("body_normal");
 				$( "body" ).addClass("body_dark");
+				
+				inputTextBoxCodeMirror.setOption("theme", "dracula");
 
 				nextStyle = "normal";
 				switchStyleButton.innerHTML = "Back to normal!";
@@ -311,21 +292,25 @@
 				$( "body" ).removeClass("body_dark");
 				$( "body" ).addClass("body_normal");
 
+				inputTextBoxCodeMirror.setOption("theme", "eclipse");
+
 				nextStyle = "dark";
 				switchStyleButton.innerHTML = "Go Dark!";
 			}
 
 		}
-
+		var text_size = 16;
 		function changeTextSize(delta)
 		{
+			text_size+=delta;
 			$( "textarea" ).each(function( index ) {
-				var size = parseInt($(this).css("font-size"));
-				size = size + delta + "px";
 				$(this).css({
-					'font-size': size
+					'font-size': text_size
 				});
 			});
+			
+			inputTextBoxCodeMirror.getWrapperElement().style["font-size"] =text_size+"px";
+			
 		}
 
 
@@ -339,17 +324,18 @@
 		<button id="switchStyleButton" onclick='switchStyle(nextStyle)' class="button_float">Go Dark!</button>
 		<button id="incTextButton"onclick='changeTextSize(1)' class="button_float button_fix_size">+</button>
 		<button id="decTextButton" onclick='changeTextSize(-1)' class="button_float button_fix_size">-</button>
-<table>
+<table width="100%" height="90%">
 	<tr>
-		<td align="center" style="padding-right: 10px">
+		<td align="center" style="padding-right: 10px" width="10%">
 				<button id="runButton" onclick='run()' class="button_compiler">RUN</button><br><br>
 				<button id="debugButton" onclick='debug()' class="button_compiler">DEBUG</button><br><br>
 				<button id="nextButton" onclick='next()' disabled ="true" class="button_compiler">NEXT</button><br><br>
 				<button id="stopButton" onclick='stop_debug()' disabled="true" class="button_compiler">stop</button><br><br>
 				<button id="cleanButton" onclick='clearRes_Label()' class="button_compiler">clear</button><br><br>
+				<h3 id="IPlabel"></h3>
 		</td>
-			<td>
-		<textarea id="inputText" rows="22" cols="50" onclick="TextBoxCheckReadableEvet()">:: use :: for comment
+			<td width="40%">
+		<textarea id="inputText" rows="30" cols="50">:: use :: for comment
 :: output - res = a * b
 start: .con_b, .b
 sic: .con, .con_b, end
@@ -372,16 +358,16 @@ sic: 0,0,0
 .con: -1
 .con_b: 0</textarea>
 			</td>
-			<td>
-				<textarea id="resText" rows="22" cols="20" placeholder="result array will be here" readonly></textarea>
+			<td width="25%">
+				<textarea id="resText" placeholder="result array will be here" readonly></textarea>
 			</td>
-			<td>
-				<textarea id="resLabelText" rows="22" cols="20"
+			<td width="25%">
+				<textarea id="resLabelText" 
 						placeholder="labels values here" readonly></textarea>
 			</td>
 		</tr>
 </table>
-		<h2 id="IPlabel"></h2>		
+				
 		<br>
 
 		<button id="copyButton" onclick='copyToClipboard()'>Copy Sic Array</button>

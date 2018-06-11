@@ -8,7 +8,12 @@ class SICerror
     }
     toString()
     {
-        return "Error at line: "+this.line + "\n"+this.error;
+        if(this.line != -1){
+            return "Error at line: "+this.line + "\n"+this.error;
+        }
+        else {
+            return "Runtime error: "+this.error;
+        }
     }
 }
 
@@ -55,9 +60,9 @@ class SICinteprater
     }
 
     checkIPInBound(){
-        return this.SCIarr[this.SCIarr[this.IP]]< this.SCIarr.length && 
-         this.SCIarr[this.SCIarr[this.IP+1]]< this.SCIarr.length && 
-         this.SCIarr[this.SCIarr[this.IP+2]]< this.SCIarr.length;
+        return this.SCIarr[this.IP]< this.SCIarr.length && 
+         this.SCIarr[this.IP+1]< this.SCIarr.length && 
+         this.SCIarr[this.IP+2]< this.SCIarr.length;
     }
 
     runSIC()
@@ -68,8 +73,9 @@ class SICinteprater
             while(this.SCIarr[this.IP]!=0 || this.SCIarr[this.IP + 1]!=0 || this.SCIarr[this.IP + 2]!=0)
             {
                 if(!this.checkIPInBound()){
-                    return new SICerror(-1, "SBN command is out of bound: " 
-                            +this.SCIarr[this.IP]+"," +this.SCIarr[this.IP + 1]+"," +this.SCIarr[this.IP + 2]);
+                    const errorLine = this.debugIndexTextGetLine(this.IP);
+                    return new SICerror(errorLine + 1, "SBN command is out of bound: " 
+                            + this.debugArray[errorLine]);
                 }
                 if ((this.SCIarr[this.SCIarr[this.IP]] -= this.SCIarr[this.SCIarr[this.IP + 1]]) < 0)
                     this.IP = this.SCIarr[this.IP + 2];
@@ -80,8 +86,9 @@ class SICinteprater
         else
         {
             if(!this.checkIPInBound()){
-                return new SICerror(-1, "SBN command is out of bound: " 
-                        +this.SCIarr[this.IP]+"," +this.SCIarr[this.IP + 1]+"," +this.SCIarr[this.IP + 2]);
+                const errorLine = this.debugIndexTextGetLine(this.IP);
+                return new SICerror(errorLine + 1, "SBN command is out of bound: " 
+                        + this.debugArray[errorLine]);
             }
             if(this.SCIarr[this.IP]==0 && this.SCIarr[this.IP + 1]==0 && this.SCIarr[this.IP + 2]==0)
             {
@@ -167,6 +174,83 @@ class SICinteprater
         return true;
 
     }
+    isComment(str)
+    {
+        return str.length >= 2 && str.charAt(0)==':' && str.charAt(1)==':';
+    }
+    removeComments(arr)
+    {
+        let res = []
+        for(let i =0; i<arr.length;i++)
+        {
+            if(!this.isComment(arr[i]))
+                res.push(arr[i]);
+        }
+        return res;
+    }
+
+    //get line from translated sic text, and return the line from the utranslated array line number.
+    debugLineTextGetLine(line)
+    {
+        let Dline=0;
+
+        if(this.isComment(this.debugArray[Dline]) || this.debugArray[Dline] == "")
+        {
+            while(this.isComment(this.debugArray[Dline])|| this.debugArray[Dline] == ""){
+                Dline++;
+            }
+        }
+
+        for(let i=0;i<line;i++)
+        {
+            if(this.isComment(this.debugArray[Dline]) || this.debugArray[Dline] == "")
+            {
+                while(this.isComment(this.debugArray[Dline])|| this.debugArray[Dline] == ""){
+                    Dline++;
+                }
+            } else {
+                Dline++;
+            }
+            i++;
+        }
+        return Dline;
+
+    }
+    debugIndexTextGetLine(index)
+    {
+        let Dline=0;
+        if(this.isComment(this.debugArray[Dline])|| this.debugArray[Dline] == "")
+        {
+            while(this.isComment(this.debugArray[Dline])|| this.debugArray[Dline] == ""){
+                Dline++;
+            }
+        }
+        
+        for(let Dindex = 0 ; Dindex < index;)
+        {
+            if(this.isComment(this.debugArray[Dline])|| this.debugArray[Dline] == "")
+            {
+                while(this.isComment(this.debugArray[Dline])|| this.debugArray[Dline] == ""){
+                    Dline++;
+                }
+            }
+            else
+            {
+                if(this.debugArray[Dline].charAt(0) == '.'){
+                    Dindex ++;
+                }
+                else {
+                    Dindex += 3;
+                }
+                Dline++;
+            }
+
+            
+        }
+        return Dline;
+
+    }
+
     // Translate text to arr
     translateToSCI(text)
     {
@@ -174,31 +258,36 @@ class SICinteprater
         let resultText = "";
         //remove spaces and all sic command
         text = text.replace(/ /g,'');
-        //text = text.replace("sic:", '');
-        //text = text.replace(/\n/g, ',');
+
+        //save debug array for errors
+        this.debugArray = text.split("\n");
+
+        //remove all comments
         text = text.replace(/::[^\n]*\n/g, '');
         text = text.replace(/\n::.*/g, '');
 
         
-
-
         let numsArr = text.split("\n");
+
+        //remove empty lines
         numsArr = numsArr.filter(function(n){ return n != "" }); 
-        let currCommand = []
+        let currCommand = [];
         
+        //set labels to the index in the sic Array
         for(let i = 0, currIndex = 0;i < numsArr.length;i++, currIndex+=currCommand.length)
         {
-
             currCommand = numsArr[i].split(",");
             let colonIndex = currCommand[0].indexOf(":") ;
+
             //if found ':', its should be a label or sic or comment
-            if(colonIndex != -1)
+            if(colonIndex != -1 && !this.isComment(currCommand[0]))
             {
                 let labelName = currCommand[0].substr(0, colonIndex);
                 if(labelName != "sic")
                 {
-                    if(labelName in this.labels)
-                        return new SICerror(i ,"Label: '" + labelName + "' is defined more then once");
+                    if(labelName in this.labels){
+                        return new SICerror(this.debugLineTextGetLine(i)+1 ,"Label: '" + labelName + "' is defined more then once");
+                    }
 
                     this.labels[labelName] = currIndex;
                     
@@ -214,49 +303,57 @@ class SICinteprater
 
             }
         }
-        this.debugArray = numsArr.slice();
-        for(let i=0; i< this.debugArray.length ; i++)
-            this.debugArray[i] = this.debugArray[i].split(',');
 
-        numsArr = numsArr.join(',').split(',');
+        //numsArr = this.removeComments(numsArr);
 
+        //remove all 'sic'
         for(let i=0;i<numsArr.length;i++)
             numsArr[i] = numsArr[i].replace("sic:", '');
-        let convertedNum;
-        let line = 0, line_step = 0;
-        for(let i=0;i<numsArr.length;i++ , line_step++)
-        {
-            if(line_step == this.debugArray[line].length){
-                line_step = 0;
-                line++;
-            }
 
-            if(numsArr[i].includes("+"))
+        //split each line
+        for(let i = 0; i < numsArr.length;i++){
+            numsArr[i] = numsArr[i].split(',');
+        }
+
+        let convertedNum;
+        let resultArr = [];
+
+        //move over all numArray and translate it to actual numbers and push them into result array
+        for(let i=0;i<numsArr.length;i++)
+        {
+            for(let j=0 ; j<numsArr[i].length;j++)
             {
-                let label_plus = numsArr[i].substr(0, numsArr[i].indexOf("+"));
-                if(label_plus in this.labels)
+                // allow adding number to label
+                if(numsArr[i][j].includes("+"))
                 {
-                    let add = numsArr[i].substr(numsArr[i].indexOf("+")+1);
-                    numsArr[i] = this.labels[label_plus] + +add;
+                    let label_plus = numsArr[i][j].substr(0, numsArr[i][j].indexOf("+"));
+                    if(label_plus in this.labels)
+                    {
+                        let add = numsArr[i][j].substr(numsArr[i][j].indexOf("+")+1);
+                        numsArr[i][j] = this.labels[label_plus] + +add;
+                    }
+                    else
+                    {
+                        return new SICerror(this.debugLineTextGetLine(i), "Label: '" +numsArr[i][j]+ "' does not exsist.");
+                    }
                 }
-                else
+                else if(numsArr[i][j] in this.labels) //change label to number
                 {
-                    return new SICerror(line, "Label: '" +numsArr[i]+ "' does not exsist.")
+                    numsArr[i][j] = this.labels[numsArr[i][j]];
                 }
+                else if(!isNaN(convertedNum = +numsArr[i][j])){ // change number text to acctual number
+                    
+                    numsArr[i][j] = convertedNum;
+                }
+                else{ // unknown text
+                    return new SICerror(this.debugLineTextGetLine(i)+1, "Label: '" +numsArr[i][j] + "' does not exist");
+                }
+                resultArr.push(numsArr[i][j]);
             }
-            else if(numsArr[i] in this.labels)
-            {
-                numsArr[i] = this.labels[numsArr[i]];
-            }
-            else if(!isNaN(convertedNum = +numsArr[i])){
-                
-                numsArr[i] = convertedNum;
-            }
-            else
-                return new SICerror(line, "Label: '" +numsArr[i]+ "' does not exsist.")
             
         }
-        return numsArr;
+
+        return resultArr;
         
     }
 }
@@ -271,7 +368,7 @@ class SICinteprater
 //console.log(SIC.run("sic:.a, .b, some_label\n::comment\n.a:1\n.b:2\nend:0,0,0\n::comment"));
 //console.log(SIC.run("sic:0,0,0\na:123"));
 //SIC.startDebug();
-//console.log(SIC.run("sic:res, a\nsic:res, b\n:: some comment\nsic: tmp, res\nsic: 0,0,0\na: 5\nb: 3\nres: 0\ntmp: 0\n:: some comment"));
+//console.log(SIC.run("\n:: some comment\nsic:.res, .a\nsic:.res, .b\n:: some comment\n:: some comment\nsic: .tmp, .res\nsic: 0,0,0\n.a: 5\n.b: 3\n.res: 0\n.tmp: 0\n:: some comment"));
 //console.log(SIC.runNext());
 //console.log(SIC.runNext());
 //console.log(SIC.runNext());
